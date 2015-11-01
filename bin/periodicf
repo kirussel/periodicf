@@ -1,0 +1,14 @@
+#!/bin/sh
+doit()
+{
+	local dir
+
+	for dir in "${@}" ; do
+		/usr/bin/env \
+			BSTG_PERIODIC_JOB="$(basename -- ${dir})" \
+			/usr/bin/lockf -s -k /var/run/periodicf \
+			/opt/bstg/bin/periodic "${dir}" || return
+	done
+}
+
+doit "${@}"

@@ -1,0 +1,145 @@
+#!/bin/bash
+
+. /opt/bstg/lib/bstgprometheus.bash
+. /opt/bstg/lib/bstgshflags
+
+DEFINE_boolean \
+	'dryrun' \
+	false \
+	'Display the commands that would have been executed but do not actually execute them.' \
+	'n'
+DEFINE_string \
+	'labels' \
+	'' \
+	'Comma seperated list of key=value pairs.' \
+	'l'
+DEFINE_string \
+	'instance' \
+	"$(hostname)" \
+	'provides the optional instance label pair' \
+	'i'
+DEFINE_string \
+	'gateway' \
+	':9091' \
+	'address of the pushgateway' \
+	'g'
+
+case "$(basename ${0:-''})" in
+	*periodicf)
+		DEFINE_string \
+			'service' \
+			'periodicf' \
+			'The service running a family of jobs' \
+			's'
+		DEFINE_string \
+			'job' \
+			"${BSTG_PERIODIC_JOB:-unknown}" \
+			'A job running in your service' \
+			'j'
+		;;
+	*)
+		DEFINE_string \
+			'service' \
+			'' \
+			'The service running a family of jobs' \
+			's'
+		DEFINE_string \
+			'job' \
+			'' \
+			'A job running in your service' \
+			'j'
+		;;
+esac
+
+typeset -A labels
+
+doit ()
+{
+	[ ${FLAGS_dryrun} -eq ${FLAGS_TRUE} ] && T=echo
+
+	local llist=""
+	local largs=""
+	local name=""
+	local task="$(basename -- ${1:-''})"
+
+	IFS=', ' read -a pairs <<< "${FLAGS_labels}"
+	pairs+=("${FLAGS_service}=${FLAGS_job}")
+	for pair in "${pairs[@]}"
+	do
+		while IFS='=' read label value
+		do
+			if [ -z "${llist}" ] ; then
+				llist="${label}"
+			else
+				llist="${llist},${label}"
+			fi
+
+			if [ -z "${largs}" ] ; then
+				largs="-${label}=${value}"
+			else
+				largs="${largs} -${label}=${value}"
+			fi
+		done << RECORD
+${pair}
+RECORD
+	done
+
+	name="${FLAGS_service}_duration_seconds"	
+	${T} io::prometheus::NewGauge \
+		name="${name}" \
+		help='Duration of batch job' \
+		${llist:+labels=}${llist} || return
+	${T} "${name}" ${largs} setToElapsedTime "${@}"
+	rc="${?}"
+
+	name="${FLAGS_service}_exit_status"	
+	${T} io::prometheus::NewGauge \
+		name="${name}" \
+		help='exit status of batch job' \
+		${llist:+labels=}${llist} || return
+	${T} "${name}" ${largs} set "${rc}"
+
+	if [ "${rc}" -eq ${FLAGS_TRUE} ] ; then
+		name="${FLAGS_service}_last_success_time"	
+		${T} io::prometheus::NewGauge \
+			name="${name}" \
+			help='time_t my batch job last succeeded' \
+			${llist:+labels=}${llist} || return
+		${T} "${name}" ${largs} set "$(date +'%s')"
+	fi
+
+	${T} io::prometheus::PushAdd \
+		job="${FLAGS_service}.${FLAGS_job}.${task}" \
+		${FLAGS_instance:+instance=}${FLAGS_instance} \
+		${FLAGS_gateway:+gateway=}${FLAGS_gateway} || return
+
+	return "${rc}"
+}
+
+errorifempty()
+{
+	if [ -z "${1}" ] ; then
+		flags_help
+		exit 1
+	fi
+}
+
+
+# parse the command-line
+FLAGS "$@" || exit $?
+eval set -- "${FLAGS_ARGV}"
+
+if [ "${FLAGS_help}" -eq ${FLAGS_TRUE} ] ; then
+	exit 1
+fi
+
+errorifempty ${FLAGS_job}
+errorifempty ${FLAGS_service}
+
+if [ $# -eq 0 ]; then
+        echo 'error: command missing' >&2
+        flags_help
+        exit 1
+fi
+
+doit "${@}"

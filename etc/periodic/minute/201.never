@@ -1,0 +1,9 @@
+#!/bin/sh
+
+. /opt/bstg/lib/periodic.lib
+
+bstg_check_yesno minute_never_enable
+
+echo
+echo 'We never give an all clear job status:'
+exit 4

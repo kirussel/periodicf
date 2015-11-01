@@ -1,0 +1,15 @@
+#!/bin/sh
+
+. /opt/bstg/lib/periodic.lib
+
+bstg_check_yesno minute_sometimes_enable
+
+echo
+echo 'We sometimes always give an all clear job status:'
+
+if [ -e /tmp/foo.txt ] ; then
+	rc=44
+else
+	rc="$(tr -cd 03 </dev/urandom | head -c 1)"
+fi
+exit $rc

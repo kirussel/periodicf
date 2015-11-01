@@ -1,0 +1,20 @@
+#!/bin/sh
+#
+# This is /etc/periodic.conf.local - a file full of useful variables that
+# you can set to change the default behaviour of periodic jobs on your
+# system.  You should edit this file with any overrides to your configuration.
+#
+# For a more detailed explanation of all the periodic.conf variables, please
+# refer to the periodic.conf(5) manual page.
+#
+
+# periodic script dirs
+local_periodic="/opt/bstg/etc/periodic"
+minute_output="/var/log/minute.log"
+minute_show_success="NO"                            # scripts returning 0
+minute_show_info="NO"                               # scripts returning 1
+
+# you will need to run mk_control_prom if you change the control params
+minute_always_enable="YES"
+minute_sometimes_enable="YES"
+minute_never_enable="NO"

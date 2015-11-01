@@ -1,0 +1,28 @@
+ALERT JobDown
+  IF up == 0
+  FOR 5m
+  WITH {
+    severity="page"
+  }
+  SUMMARY "Job {{$labels.instance}} is not responding"
+  DESCRIPTION "{{$labels.instance}} of {{$labels.job}} is not responding."
+  RUNBOOK "https://github.com/kirussel/periodicf/blob/master/playbook/JobDown.md"
+
+ALERT PeriodicJobNoRecentSuccess
+  IF (time() - periodicf_last_success_time{periodicf="minute"} and on(control) (periodicf_control == 1)) > 900
+  WITH {
+    severity="ticket"
+  }
+  SUMMARY "{{$labels.periodicf}} periodic task has not succeeded recently"
+  DESCRIPTION "{{$labels.exported_job}} last succeeded {{humanizeDuration $value}} ago."
+  RUNBOOK "https://github.com/kirussel/periodicf/blob/master/playbook/PeriodicJobNoRecentSuccess.md"
+
+ALERT PeriodicJobHasNeverRan
+  IF (periodicf_last_success_time{periodicf="minute"} or on(control) periodicf_control) == 1
+  FOR 15m
+  WITH {
+    severity="ticket"
+  }
+  SUMMARY "{{$labels.control}} periodic task has never ran"
+  DESCRIPTION "Task with control variable {{$labels.control}} has never ran."
+  RUNBOOK "https://github.com/kirussel/periodicf/blob/master/playbook/PeriodicJobHasNeverRan.md"

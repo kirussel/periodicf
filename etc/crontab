@@ -1,0 +1,4 @@
+# Add to /etc/crontab or another crontab to bootstrap the periodic job run.
+
+# Perform maintenance every minute.
+*	*	*	*	*	root	/opt/bstg/bin/periodicf minute

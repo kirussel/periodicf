@@ -1,0 +1,23 @@
+#!/bin/sh
+pushconfig() {
+	local list
+	[ ${FLAGS_dryrun} -eq ${FLAGS_TRUE} ] && T=echo
+
+
+	list="$(. /opt/bstg/etc/periodic.conf.local && set)"
+	echo "${list}" | grep _enable= | while IFS='=' read label value
+	do
+		case "${value}" in
+		[Yy][Ee][Ss]) value=1;;
+		[Nn][Oo]) value=0;;
+		*) value='';;
+		esac
+
+		[ -z "${value}" ] && continue
+
+		printf "periodicf_control{control=\"%s\"} %d\n" \
+			"${label}" "${value}"
+	done
+}
+
+pushconfig > /opt/bstg/textfile_collector/periodicf_control.prom
