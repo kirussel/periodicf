@@ -22,7 +22,7 @@ Use the [periodic](https://www.freebsd.org/cgi/man.cgi?query=periodic&format=htm
 Use some extra scripts to:
 * enforce a global serial execution ordering
 * [reports job execution status](http://www.robustperception.io/monitoring-batch-jobs-in-python/) to the [Prometheus](http://prometheus.io/) monitoring system
-* [use labels](http://www.robustperception.io/how-to-have-labels-for-machine-roles/) to indicate if a job is enabled or disable
+* [use a configuration vector](http://www.robustperception.io/how-to-have-labels-for-machine-roles/) to indicate if a job is enabled or disable
 
 ## References
 
