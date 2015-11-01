@@ -15,7 +15,7 @@ ALERT PeriodicJobNoRecentSuccess
   }
   SUMMARY "{{$labels.periodicf}} periodic task has not succeeded recently"
   DESCRIPTION "{{$labels.exported_job}} last succeeded {{humanizeDuration $value}} ago."
-  RUNBOOK "https://github.com/kirussel/periodicf/blob/master/playbook/PeriodicJobNoRecentSuccess.md"
+  RUNBOOK "{{$labels.exported_job}} last succeeded {{humanizeDuration $value}} ago. See https://github.com/kirussel/periodicf/blob/master/etc/periodic/minute/{{$labels.script}}"
 
 ALERT PeriodicJobHasNeverRan
   IF (periodicf_last_success_time{periodicf="minute"} or on(control) periodicf_control) == 1
